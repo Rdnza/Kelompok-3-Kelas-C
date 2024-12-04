@@ -52,9 +52,9 @@ def register():
 def logout():
     global current_user
     current_user = None
-    notebook.tab(1, state="disabled")
     notebook.select(0)
-    messagebox.showinfo("Logout", "You have been logged out.")
+    notebook.tab(1, state="disabled")
+    messagebox.showinfo("Logout", "You have successfully logged out!")
 
 # Calculate BMI and transition to calorie calculation
 def calculate_bmi():
@@ -69,26 +69,6 @@ def calculate_bmi():
             recommendation = (
                 "Increase your calorie intake with nutrient-dense foods like nuts, avocado, and whole grains.\n"
                 "Light resistance exercises can help build muscle mass."
-            )
-        elif 18.5 <= bmi <= 24.9:
-            status = "Normal"
-            calorie_adjustment = 0  # Maintain weight
-            recommendation = (
-                "Maintain your current diet and exercise routine to stay healthy.\n"
-                "Engage in regular physical activity like walking or light jogging."
-            )
-        elif 25 <= bmi <= 29.9:
-            status = "Overweight"
-            calorie_adjustment = -500  # Lose weight
-            recommendation = (
-                "Adopt a calorie deficit diet with vegetables, lean proteins, and whole grains.\n"
-                "Include moderate-intensity exercises like cycling or brisk walking for 30-45 minutes daily."
-            )
-        else:
-            status = "Obese"
-            calorie_adjustment = -750  # Lose weight faster
-            recommendation = (
-                "Follow a low-calorie, balanced diet. Consult a healthcare provider for abuild muscle mass."
             )
         elif 18.5 <= bmi <= 24.9:
             status = "Normal"
@@ -189,38 +169,43 @@ def generate_meal_plan(target_calories, status):
 
     return {"details": details, "exercise": exercise}
 
-# UI setup with custom design
+# UI setup
 root = tk.Tk()
 root.title("BMI and Calorie Needs Calculator")
-root.geometry("500x600")  # Increase size for better UI
-root.configure(bg="#f7f7f7")  # Light background color
+root.geometry("600x450")  # Adjust the size for a larger interface
+root.configure(bg="#f5f5f5")
 
+# Style Configuration
+style = ttk.Style()
+style.theme_use("clam")
+
+# Background and Foreground
+style.configure("TFrame", background="#f5f5f5")
+style.configure("TLabel", background="#f5f5f5", foreground="#333333", font=("Arial", 12))
+style.configure("TButton", background="#008CBA", foreground="white", font=("Arial", 12), padding=5)
+style.map("TButton", background=[("active", "#005f73")])
+
+# Notebook for tabbed interface
 notebook = ttk.Notebook(root)
-login_tab = ttk.Frame(notebook, padding=20)
-calculator_tab = ttk.Frame(notebook, padding=20)
+login_tab = ttk.Frame(notebook)
+calculator_tab = ttk.Frame(notebook)
 
 notebook.add(login_tab, text="Login")
 notebook.add(calculator_tab, text="Calculator", state="disabled")
 notebook.pack(expand=True, fill="both")
 
-# Custom Styles
-style = ttk.Style()
-style.configure("TLabel", font=("Helvetica", 12))
-style.configure("TButton", font=("Helvetica", 12), padding=5)
-style.configure("TEntry", font=("Helvetica", 12))
-
 # Login Tab
 username_var = tk.StringVar()
 password_var = tk.StringVar()
 
-ttk.Label(login_tab, text="Username:", background="#f7f7f7").grid(row=0, column=0, padx=10, pady=10, sticky="w")
-ttk.Entry(login_tab, textvariable=username_var).grid(row=0, column=1, padx=10, pady=10)
+ttk.Label(login_tab, text="Username:", font=("Arial", 12)).grid(row=0, column=0, padx=20, pady=10)
+ttk.Entry(login_tab, textvariable=username_var, font=("Arial", 12), width=25).grid(row=0, column=1, padx=20, pady=10)
 
-ttk.Label(login_tab, text="Password:", background="#f7f7f7").grid(row=1, column=0, padx=10, pady=10, sticky="w")
-ttk.Entry(login_tab, textvariable=password_var, show="*").grid(row=1, column=1, padx=10, pady=10)
+ttk.Label(login_tab, text="Password:", font=("Arial", 12)).grid(row=1, column=0, padx=20, pady=10)
+ttk.Entry(login_tab, textvariable=password_var, show="*", font=("Arial", 12), width=25).grid(row=1, column=1, padx=20, pady=10)
 
-ttk.Button(login_tab, text="Login", command=login).grid(row=2, column=0, columnspan=2, pady=10)
-ttk.Button(login_tab, text="Register", command=register).grid(row=3, column=0, columnspan=2, pady=10)
+ttk.Button(login_tab, text="Login", command=login, width=20).grid(row=2, column=0, columnspan=2, pady=10)
+ttk.Button(login_tab, text="Register", command=register, width=20).grid(row=3, column=0, columnspan=2, pady=10)
 
 # Calculator Tab
 weight_var = tk.StringVar()
@@ -229,27 +214,23 @@ age_var = tk.StringVar()
 gender_var = tk.StringVar()
 activity_var = tk.StringVar()
 
-ttk.Label(calculator_tab, text="Weight (kg):", background="#f7f7f7").grid(row=0, column=0, padx=10, pady=10, sticky="w")
-ttk.Entry(calculator_tab, textvariable=weight_var).grid(row=0, column=1, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Weight (kg):", font=("Arial", 12)).grid(row=0, column=0, padx=20, pady=10)
+ttk.Entry(calculator_tab, textvariable=weight_var, font=("Arial", 12), width=25).grid(row=0, column=1, padx=20, pady=10)
 
-ttk.Label(calculator_tab, text="Height (cm):", background="#f7f7f7").grid(row=1, column=0, padx=10, pady=10, sticky="w")
-ttk.Entry(calculator_tab, textvariable=height_var).grid(row=1, column=1, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Height (cm):", font=("Arial", 12)).grid(row=1, column=0, padx=20, pady=10)
+ttk.Entry(calculator_tab, textvariable=height_var, font=("Arial", 12), width=25).grid(row=1, column=1, padx=20, pady=10)
 
-ttk.Label(calculator_tab, text="Age:", background="#f7f7f7").grid(row=2, column=0, padx=10, pady=10, sticky="w")
-ttk.Entry(calculator_tab, textvariable=age_var).grid(row=2, column=1, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Age:", font=("Arial", 12)).grid(row=2, column=0, padx=20, pady=10)
+ttk.Entry(calculator_tab, textvariable=age_var, font=("Arial", 12), width=25).grid(row=2, column=1, padx=20, pady=10)
 
-ttk.Label(calculator_tab, text="Gender:", background="#f7f7f7").grid(row=3, column=0, padx=10, pady=10, sticky="w")
-ttk.Combobox(calculator_tab, textvariable=gender_var, values=["male", "female"]).grid(row=3, column=1, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Gender:", font=("Arial", 12)).grid(row=3, column=0, padx=20, pady=10)
+ttk.Combobox(calculator_tab, textvariable=gender_var, values=["male", "female"], state="readonly", font=("Arial", 12), width=23).grid(row=3, column=1, padx=20, pady=10)
 
-ttk.Label(calculator_tab, text="Activity Level:", background="#f7f7f7").grid(row=4, column=0, padx=10, pady=10, sticky="w")
-ttk.Combobox(
-    calculator_tab,
-    textvariable=activity_var,
-    values=["low", "moderate", "high"]
-).grid(row=4, column=1, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Activity Level:", font=("Arial", 12)).grid(row=4, column=0, padx=20, pady=10)
+ttk.Combobox(calculator_tab, textvariable=activity_var, values=["low", "moderate", "high"], state="readonly", font=("Arial", 12), width=23).grid(row=4, column=1, padx=20, pady=10)
 
-ttk.Button(calculator_tab, text="Calculate BMI", command=calculate_bmi).grid(row=5, column=0, columnspan=2, pady=10)
-ttk.Button(calculator_tab, text="Logout", command=logout).grid(row=6, column=0, columnspan=2, pady=10)
+ttk.Button(calculator_tab, text="Calculate BMI & Calories", command=calculate_bmi, width=25).grid(row=5, column=0, columnspan=2, pady=15)
+ttk.Button(calculator_tab, text="Logout", command=logout, width=25).grid(row=6, column=0, columnspan=2, pady=10)
 
-# Initialize the application
+# Start the main application loop
 root.mainloop()
