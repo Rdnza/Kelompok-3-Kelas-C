@@ -48,6 +48,14 @@ def register():
         save_database(data)
         messagebox.showinfo("Success", "Registration successful!")
 
+# Logout functionality
+def logout():
+    global current_user
+    current_user = None
+    notebook.tab(1, state="disabled")
+    notebook.select(0)
+    messagebox.showinfo("Logout", "You have been logged out.")
+
 # Calculate BMI and transition to calorie calculation
 def calculate_bmi():
     try:
@@ -205,14 +213,15 @@ ttk.Entry(calculator_tab, textvariable=age_var).grid(row=2, column=1, padx=10, p
 ttk.Label(calculator_tab, text="Gender:").grid(row=3, column=0, padx=10, pady=10)
 ttk.Combobox(calculator_tab, textvariable=gender_var, values=["male", "female"]).grid(row=3, column=1, padx=10, pady=10)
 
-ttk.Label(calculator_tab, text="Activity Level:").grid(row=4, column=0, padx=10, pady=10)
+ttk.Label(calculator_tab, text="Activity Level:").grid(row=4, column=0,padx=10, pady=10)
 ttk.Combobox(
-    calculator_tab, 
-    textvariable=activity_var, 
+    calculator_tab,
+    textvariable=activity_var,
     values=["low", "moderate", "high"]
 ).grid(row=4, column=1, padx=10, pady=10)
 
 ttk.Button(calculator_tab, text="Calculate BMI", command=calculate_bmi).grid(row=5, column=0, columnspan=2, pady=10)
+ttk.Button(calculator_tab, text="Logout", command=logout).grid(row=6, column=0, columnspan=2, pady=10)
 
 # Initialize the application
 root.mainloop()
