@@ -19,6 +19,16 @@ Aplikasi ini akan menghitung Body Mass Index (BMI) berdasarkan berat badan dan t
 2. Memberikan rekomendasi kebutuhan kalori harian untuk mempertahankan berat badan ideal.
 3. Rekomendasi Kesehatan Menyediakan jumlah kalori harian yang disarankan, Memberikan saran olahraga sesuai kategori BMI, Menyediakan rencana makan (meal plan) sesuai kebutuhan.
 
+## Teknologi yang Digunakan
+1. Bahasa pemrograman: Python
+2. Perpustakaan:
+   - **JSON**: Menyimpan dan mentransmisikan data dalam aplikasi web dan aplikasi berbasis server.
+   - **Tkinter**: Digunakan untuk membuat antarmuka grafis (GUI) dalam aplikasi.
+   - **datetime**: Modul dalam Python yang menyediakan kelas untuk menangani tanggal dan waktu.
+   - **canvas**: Digunakan untuk menggambar dan menulis ke dalam sebuah PDF.
+   - **letter**:  Untuk menentukan ukuran halaman ketika membuat dokumen PDF.
+   - **os**: Digunakan untuk memeriksa keberadaan file dan berinteraksi dengan sistem file.
+
 ## Flowchart
 ![flowchart prokom](https://github.com/user-attachments/assets/24dc9014-3d06-4f6d-ab7c-c040ff346b9b)
 
