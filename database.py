@@ -1,3 +1,4 @@
+# database.py
 import json
 
 USERS_DB_FILE = "users_data.json"
