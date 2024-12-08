@@ -1,7 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import json
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from datetime import datetime
+import json
+import os
+from PIL import Image, ImageTk
 
 # Database Files
 USERS_DB_FILE = "users_data.json"
@@ -18,12 +22,10 @@ def load_users_database():
     except FileNotFoundError:
         return {"users": {}}
 
-# Save users data to database
 def save_users_database(data):
     with open(USERS_DB_FILE, "w") as f:
         json.dump(data, f)
 
-# Load or initialize the history database
 def load_history_database():
     try:
         with open(HISTORY_DB_FILE, "r") as f:
@@ -31,12 +33,10 @@ def load_history_database():
     except FileNotFoundError:
         return {"history": {}}
 
-# Save history data to database
 def save_history_database(data):
     with open(HISTORY_DB_FILE, "w") as f:
         json.dump(data, f)
 
-# Login functionality
 def login():
     global current_user
     username = username_var.get()
@@ -46,12 +46,11 @@ def login():
     if username in users_data["users"] and users_data["users"][username] == password:
         current_user = username
         messagebox.showinfo("Success", "Login successful!")
-        notebook.tab(1, state="normal")
-        notebook.select(1)
+        login_frame.pack_forget()  # Hide login frame
+        bmi_calculator_frame.pack(fill="both", expand=True)  # Show BMI calculator frame
     else:
         messagebox.showerror("Error", "Invalid username or password!")
 
-# Register functionality
 def register():
     username = username_var.get()
     password = password_var.get()
@@ -64,39 +63,52 @@ def register():
         save_users_database(users_data)
         messagebox.showinfo("Success", "Registration successful!")
 
-# Logout functionality
 def logout():
     global current_user
     current_user = None
-    notebook.select(0)
-    notebook.tab(1, state="disabled")
+    bmi_calculator_frame.pack_forget()  # Hide BMI calculator frame
+    login_frame.pack(fill="both", expand=True)  # Show login frame
+    
+    # Reset all input fields
+    weight_var.set("")
+    height_var.set("")
+    age_var.set("")
+    gender_var.set("male")
+    activity_var.set("low")
+
     messagebox.showinfo("Logout", "You have successfully logged out!")
 
-# Calculate BMI and transition to calorie calculation
 def calculate_bmi():
     try:
         weight = float(weight_var.get())
         height = float(height_var.get()) / 100  # Convert to meters
         bmi = weight / (height ** 2)
 
+        # Determine BMI status and calorie recommendations
         if bmi < 18.5:
             status = "Underweight"
             calorie_adjustment = 500
-            recommendation = "Increase your calorie intake with nutrient-dense foods. Light resistance exercises can help build muscle mass."
+            exercise_recommendation = "Focus on strength training and resistance exercises."
+            meal_plan = get_meal_plan("underweight")
         elif 18.5 <= bmi <= 24.9:
             status = "Normal"
             calorie_adjustment = 0
-            recommendation = "Maintain your current diet and exercise routine to stay healthy."
+            exercise_recommendation = "Maintain a balanced routine with moderate cardio and strength training."
+            meal_plan = get_meal_plan("normal")
         elif 25 <= bmi <= 29.9:
             status = "Overweight"
             calorie_adjustment = -500
-            recommendation = "Adopt a calorie deficit diet and include moderate-intensity exercises like cycling."
+            exercise_recommendation = "Focus on cardio exercises (running, cycling) to burn fat."
+            meal_plan = get_meal_plan("overweight")
         else:
             status = "Obese"
             calorie_adjustment = -750
-            recommendation = "Follow a low-calorie diet and incorporate low-impact exercises like swimming."
+            exercise_recommendation = "Focus on intense cardio workouts (HIIT, running) and strength training."
+            meal_plan = get_meal_plan("obese")
 
-        # Save BMI to history
+        calorie_needs = calculate_calories(calorie_adjustment)
+        save_to_report(bmi, status, calorie_needs, exercise_recommendation, meal_plan)
+
         history_data = load_history_database()
         if current_user:
             if current_user not in history_data["history"]:
@@ -104,17 +116,17 @@ def calculate_bmi():
             history_data["history"][current_user].append({"type": "BMI", "value": bmi, "status": status})
             save_history_database(history_data)
 
-        # Show BMI result and proceed to calorie calculation
         messagebox.showinfo(
             "BMI Result",
-            f"Your BMI: {bmi:.2f} ({status})\n\nRecommendation:\n{recommendation}"
+            f"Your BMI: {bmi:.2f} ({status})\n\n"
+            f"Calorie Needs: {calorie_needs} kcal/day\n"
+            f"Exercise Recommendation: {exercise_recommendation}\n\n"
+            f"Meal Plan:\n{meal_plan}"
         )
-        calculate_calories(bmi, calorie_adjustment, status)
     except ValueError:
         messagebox.showerror("Error", "Please enter valid inputs!")
 
-# Calculate Calorie Needs
-def calculate_calories(bmi, calorie_adjustment, status):
+def calculate_calories(calorie_adjustment):
     try:
         weight = float(weight_var.get())
         height = float(height_var.get())
@@ -129,154 +141,160 @@ def calculate_calories(bmi, calorie_adjustment, status):
 
         activity_multiplier = {"low": 1.2, "moderate": 1.55, "high": 1.9}
         maintenance_calories = bmr * activity_multiplier[activity]
-        target_calories = maintenance_calories + calorie_adjustment
-
-        # Recommendations based on BMI status
-        meal_plan = generate_meal_plan(target_calories, status)
-
-        messagebox.showinfo(
-            "Calorie Needs",
-            f"Your daily calorie target is: {target_calories:.2f} kcal\n\n"
-            f"Suggested Meal Plan:\n{meal_plan['details']}\n\n"
-            f"Exercise Recommendation:\n{meal_plan['exercise']}"
-        )
-
-        # Save the report
-        save_report(bmi, status, target_calories, meal_plan)
+        return round(maintenance_calories + calorie_adjustment, 2)
     except ValueError:
-        messagebox.showerror("Error", "Please enter valid inputs!")
+        return "Invalid input"
 
-# Generate a report and save it to a file
-def save_report(bmi, status, target_calories, meal_plan):
-    try:
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        report_content = f"""
-        User Report - {current_user}
-        Date: {date_str}
-        ===========================
-        BMI Calculation:
-        ---------------------------
-        BMI: {bmi:.2f}
-        Status: {status}
-
-        Calorie Needs:
-        ---------------------------
-        Daily Calorie Target: {target_calories:.2f} kcal
-
-        Suggested Meal Plan:
-        ---------------------------
-        {meal_plan['details']}
-
-        Exercise Recommendation:
-        ---------------------------
-        {meal_plan['exercise']}
+def get_meal_plan(status):
+    # Budget-friendly meal plans based on BMI status
+    if status == "underweight":
+        return """
+        Breakfast: Scrambled eggs with toast and a banana.
+        Lunch: Rice and beans with a side of mixed greens.
+        Dinner: Chicken with roasted potatoes and carrots.
+        Snacks: Peanut butter on whole wheat bread.
         """
-        # Save the report to a file
-        report_file = f"{current_user}report{date_str}.txt"
-        with open(report_file, "w") as file:
-            file.write(report_content)
+    elif status == "normal":
+        return """
+        Breakfast: Oatmeal with sliced banana and peanut butter.
+        Lunch: Whole wheat sandwich with turkey, lettuce, and tomato.
+        Dinner: Baked chicken with brown rice and steamed broccoli.
+        Snacks: Yogurt with mixed berries and a small handful of almonds.
+        """
+    elif status == "overweight":
+        return """
+        Breakfast: Greek yogurt with oats and a handful of berries.
+        Lunch: Tuna salad with mixed greens and olive oil dressing.
+        Dinner: Grilled chicken with steamed vegetables and quinoa.
+        Snacks: Carrot sticks and hummus.
+        """
+    elif status == "obese":
+        return """
+        Breakfast: Boiled eggs with spinach and whole wheat toast.
+        Lunch: Grilled chicken with quinoa and roasted vegetables.
+        Dinner: Baked salmon with green beans and sweet potatoes.
+        Snacks: Apple slices with peanut butter.
+        """
+    return ""
 
-        messagebox.showinfo(
-            "Report Saved",
-            f"Report has been saved successfully as '{report_file}' in the current directory."
-        )
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to save the report: {str(e)}")
+def save_to_report(bmi, status, calorie_needs, exercise_recommendation, meal_plan):
+    report_file = f"{current_user}_report.pdf" if current_user else "report.pdf"
+    c = canvas.Canvas(report_file, pagesize=letter)
 
-def generate_meal_plan(target_calories, status):
-    """Generate a meal plan and exercise recommendation based on target calories and BMI status."""
-    breakfast = round(target_calories * 0.3)
-    lunch = round(target_calories * 0.35)
-    dinner = round(target_calories * 0.25)
-    snacks = round(target_calories * 0.1)
+    # Set up header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(100, 750, f"Report for {current_user or 'Guest'}")
+    
+    # Add BMI and status
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, 720, f"BMI: {bmi:.2f} ({status})")
+    c.drawString(100, 700, f"Calorie Needs: {calorie_needs} kcal/day")
+    
+    # Add Exercise Recommendation
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, 670, "Exercise Recommendation:")
+    c.setFont("Helvetica", 10)
+    c.drawString(100, 650, exercise_recommendation)
+    
+    # Add Meal Plan
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, 620, "Meal Plan:")
+    c.setFont("Helvetica", 10)
+    lines = meal_plan.split("\n")
+    y_position = 600
+    for line in lines:
+        c.drawString(100, y_position, line)
+        y_position -= 20
 
-    meal_options = {
-        "breakfast": ["Oatmeal with fruits", "Scrambled eggs with toast"],
-        "lunch": ["Grilled chicken salad", "Vegetable stir-fry with rice"],
-        "dinner": ["Baked salmon with vegetables", "Vegetarian curry with rice"],
-        "snacks": ["Mixed nuts", "Protein bar"]
-    }
+    # Add Date
+    c.setFont("Helvetica", 10)
+    c.drawString(100, y_position - 20, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Save the PDF
+    c.showPage()
+    c.save()
+    messagebox.showinfo("Report Saved", f"Report saved to {report_file}")
 
-    if status in ["Overweight", "Obese"]:
-        exercise = "Cardio-focused workouts like brisk walking, cycling, or swimming."
-    elif status == "Underweight":
-        exercise = "Light resistance exercises to build muscle mass."
-    else:
-        exercise = "Maintain regular activities like walking or jogging."
-
-    details = (
-        f"Breakfast: {breakfast} kcal - {meal_options['breakfast'][0]}\n"
-        f"Lunch: {lunch} kcal - {meal_options['lunch'][0]}\n"
-        f"Dinner: {dinner} kcal - {meal_options['dinner'][0]}\n"
-        f"Snacks: {snacks} kcal - {meal_options['snacks'][0]}"
-    )
-
-    return {"details": details, "exercise": exercise}
-
-# UI setup
+# Set up the main window
 root = tk.Tk()
-root.title("BMI and Calorie Needs Calculator")
-root.geometry("600x500")  # Adjusted size for better appearance
-root.configure(bg="#f5f5f5")
+root.title("BMI and Healthcare")
+root.geometry("600x600")
 
-# Improved styling
-style = ttk.Style()
-style.theme_use("clam")
-style.configure("TFrame", background="#f5f5f5")
-style.configure("TLabel", background="#f5f5f5", foreground="#333333", font=("Arial", 12))
-style.configure("TButton", background="#008CBA", foreground="white", font=("Arial", 12), padding=5)
-style.map("TButton", background=[("active", "#005f73")])
+# Define fonts
+font_large = ('Helvetica', 12)
+font_bold = ('Helvetica-Bold', 12)
 
-# Notebook for tabbed interface
-notebook = ttk.Notebook(root)
-login_tab = ttk.Frame(notebook)
-calculator_tab = ttk.Frame(notebook)
+# Define colors
+bg_color = "#A8D5BA"  # Soft green background color
+button_color = "#4C9A2A"  # Darker green for buttons
+entry_color = "#F4F4F4"  # Light gray for entry fields
+text_color = "#2F4F4F"  # Darker gray for text
 
-notebook.add(login_tab, text="Login")
-notebook.add(calculator_tab, text="Calculator", state="disabled")
-notebook.pack(expand=True, fill="both")
+# Frame for Login
+login_frame = ttk.Frame(root)
 
-# Login Tab UI Elements
+# Frame for BMI Calculator
+bmi_calculator_frame = ttk.Frame(root)
+
+# Define variables for inputs
 username_var = tk.StringVar()
 password_var = tk.StringVar()
-
-ttk.Label(login_tab, text="Username:", font=("Arial", 12)).grid(row=0, column=0, padx=20, pady=10)
-ttk.Entry(login_tab, textvariable=username_var, font=("Arial", 12), width=25).grid(row=0, column=1, padx=20, pady=10)
-
-ttk.Label(login_tab, text="Password:", font=("Arial", 12)).grid(row=1, column=0, padx=20, pady=10)
-ttk.Entry(login_tab, textvariable=password_var, font=("Arial", 12), show="*", width=25).grid(row=1, column=1, padx=20, pady=10)
-
-ttk.Button(login_tab, text="Login", command=login).grid(row=2, column=0, columnspan=2, pady=10)
-ttk.Button(login_tab, text="Register", command=register).grid(row=3, column=0, columnspan=2, pady=10)
-
-# Calculator Tab UI Elements
 weight_var = tk.StringVar()
 height_var = tk.StringVar()
 age_var = tk.StringVar()
-gender_var = tk.StringVar()
-activity_var = tk.StringVar()
+gender_var = tk.StringVar(value="male")
+activity_var = tk.StringVar(value="low")
 
-ttk.Label(calculator_tab, text="Weight (kg):", font=("Arial", 12)).grid(row=0, column=0, padx=20, pady=10)
-ttk.Entry(calculator_tab, textvariable=weight_var, font=("Arial", 12), width=25).grid(row=0, column=1, padx=20, pady=10)
+# Load background image
+current_dir = os.path.dirname(__file__)
+image_path = os.path.join(current_dir, "background.jpeg")
 
-ttk.Label(calculator_tab, text="Height (cm):", font=("Arial", 12)).grid(row=1, column=0, padx=20, pady=10)
-ttk.Entry(calculator_tab, textvariable=height_var, font=("Arial", 12), width=25).grid(row=1, column=1, padx=20, pady=10)
+# Function to set background image for both frames
+def set_background(frame):
+    try:
+        image = Image.open(image_path)
+        photo = ImageTk.PhotoImage(image)
+        background_label = tk.Label(frame, image=photo)
+        background_label.photo = photo
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    except Exception as e:
+        print(f"Error: {e}")
 
-ttk.Label(calculator_tab, text="Age (years):", font=("Arial", 12)).grid(row=2, column=0, padx=20, pady=10)
-ttk.Entry(calculator_tab, textvariable=age_var, font=("Arial", 12), width=25).grid(row=2, column=1, padx=20, pady=10)
+# Set background for the login frame
+set_background(login_frame)
 
-ttk.Label(calculator_tab, text="Gender:", font=("Arial", 12)).grid(row=3, column=0, padx=20, pady=10)
-gender_dropdown = ttk.Combobox(calculator_tab, textvariable=gender_var, font=("Arial", 12), values=["male", "female"], state="readonly", width=22)
-gender_dropdown.grid(row=3, column=1, padx=20, pady=10)
-gender_dropdown.set("Select Gender")
+# Login Form Widgets
+ttk.Label(login_frame, text="Username:", font=font_bold, foreground=text_color).place(x=100, y=50)
+ttk.Entry(login_frame, textvariable=username_var, font=font_large, background=entry_color).place(x=200, y=50, width=200)
 
-ttk.Label(calculator_tab, text="Activity Level:", font=("Arial", 12)).grid(row=4, column=0, padx=20, pady=10)
-activity_dropdown = ttk.Combobox(calculator_tab, textvariable=activity_var, font=("Arial", 12), values=["low", "moderate", "high"], state="readonly", width=22)
-activity_dropdown.grid(row=4, column=1, padx=20, pady=10)
-activity_dropdown.set("Select Activity Level")
+ttk.Label(login_frame, text="Password:", font=font_bold, foreground=text_color).place(x=100, y=100)
+ttk.Entry(login_frame, textvariable=password_var, show="*", font=font_large, background=entry_color).place(x=200, y=100, width=200)
 
-ttk.Button(calculator_tab, text="Calculate BMI and Calorie Needs", command=calculate_bmi).grid(row=5, column=0, columnspan=2, pady=20)
-ttk.Button(calculator_tab, text="Logout", command=logout).grid(row=6, column=0, columnspan=2, pady=10)
+ttk.Button(login_frame, text="Login", command=login, style="TButton").place(x=150, y=200, width=100)
+ttk.Button(login_frame, text="Register", command=register, style="TButton").place(x=300, y=200, width=100)
 
-# Run the application
+login_frame.pack(fill="both", expand=True)  # Display the login frame initially
+
+# Set background for the bmi_calculator_frame
+set_background(bmi_calculator_frame)
+
+# BMI Calculation Form Widgets
+ttk.Label(bmi_calculator_frame, text="Weight (kg):", font=font_bold, foreground=text_color).place(x=100, y=50)
+ttk.Entry(bmi_calculator_frame, textvariable=weight_var, font=font_large, background=entry_color).place(x=200, y=50, width=200)
+
+ttk.Label(bmi_calculator_frame, text="Height (cm):", font=font_bold, foreground=text_color).place(x=100, y=100)
+ttk.Entry(bmi_calculator_frame, textvariable=height_var, font=font_large, background=entry_color).place(x=200, y=100, width=200)
+
+ttk.Label(bmi_calculator_frame, text="Age:", font=font_bold, foreground=text_color).place(x=100, y=150)
+ttk.Entry(bmi_calculator_frame, textvariable=age_var, font=font_large, background=entry_color).place(x=200, y=150, width=200)
+
+ttk.Label(bmi_calculator_frame, text="Gender:", font=font_bold, foreground=text_color).place(x=100, y=200)
+ttk.Combobox(bmi_calculator_frame, textvariable=gender_var, values=["male", "female"], font=font_large, state="readonly").place(x=200, y=200, width=200)
+
+ttk.Label(bmi_calculator_frame, text="Activity Level:", font=font_bold, foreground=text_color).place(x=100, y=250)
+ttk.Combobox(bmi_calculator_frame, textvariable=activity_var, values=["low", "moderate", "high"], font=font_large, state="readonly").place(x=200, y=250, width=200)
+
+ttk.Button(bmi_calculator_frame, text="Calculate BMI", command=calculate_bmi, style="TButton").place(x=150, y=350, width=100)
+ttk.Button(bmi_calculator_frame, text="Logout", command=logout, style="TButton").place(x=300, y=350, width=100)
+
 root.mainloop()
