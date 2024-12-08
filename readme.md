@@ -19,7 +19,7 @@ Aplikasi ini akan menghitung Body Mass Index (BMI) berdasarkan berat badan dan t
 2. Memberikan rekomendasi kebutuhan kalori harian untuk mempertahankan berat badan ideal.
 3. Rekomendasi Kesehatan Menyediakan jumlah kalori harian yang disarankan, Memberikan saran olahraga sesuai kategori BMI, Menyediakan rencana makan (meal plan) sesuai kebutuhan.
 
-## Teknologi yang Digunakan
+## Library
 1. **Bahasa pemrograman**: Python
 2. **Perpustakaan**:
    - **JSON**: Menyimpan dan mentransmisikan data dalam aplikasi web dan aplikasi berbasis server.
