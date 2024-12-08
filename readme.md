@@ -17,7 +17,7 @@ Aplikasi ini akan menghitung Body Mass Index (BMI) berdasarkan berat badan dan t
 ## Fitur Aplikasi:
 1. Menyediakan kategori BMI Anda, seperti *underweight* (berat badan kurang), *normal weight* (berat badan normal), *overweight* (berat badan berlebih), atau *obese* (obesitas).  
 2. Memberikan rekomendasi kebutuhan kalori harian untuk mempertahankan berat badan ideal.
-3. Rekomendasi Kesehatan Menyediakan jumlah kalori harian yang disarankan, Memberikan saran olahraga sesuai kategori BMI, Menyediakan rencana makan (meal plan) sesuai kebutuhan.
+3. Rekomendasi kesehatan menyediakan jumlah kalori harian yang disarankan, menyarankan olahraga yang baik untuk dilakukan, dan menyediakan rencana makan (meal plan) sesuai kebutuhan.
 
 ## Library
 1. **Bahasa pemrograman**: Python
