@@ -8,18 +8,22 @@ def calculate_bmi(weight, height, age, gender, activity):
         if bmi < 18.5:
             status = "Underweight"
             calorie_adjustment = 500
+            exercise_recommendation = "Focus on strength training and resistance exercises."
         elif 18.5 <= bmi <= 24.9:
             status = "Normal"
             calorie_adjustment = 0
+            exercise_recommendation = "Maintain a balanced routine with moderate cardio and strength training."
         elif 25 <= bmi <= 29.9:
             status = "Overweight"
             calorie_adjustment = -500
+            exercise_recommendation = "Focus on cardio exercises (running, cycling) to burn fat."
         else:
             status = "Obese"
             calorie_adjustment = -750
+            exercise_recommendation = "Focus on intense cardio workouts (HIIT, running) and strength training."
 
         calorie_needs = calculate_calories(weight, height, age, gender, activity, calorie_adjustment)
-        return bmi, status, calorie_needs
+        return bmi, status, calorie_needs, exercise_recommendation
     except ValueError:
         messagebox.showerror("Error", "Please enter valid inputs!")
 
