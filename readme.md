@@ -1,7 +1,3 @@
-<<<<<<< HEAD
- Kelompok-3-Kelas-C
-import pandas as pd
-import tkinter as tk
 =======
 # Kelompok 3 Kelas C
 
